@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tasktap — Good neighbors, done good</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #171717;
+      --paper: #f7f3ea;
+      --white: #fffdf8;
+      --blue: #2858d8;
+      --blue-dark: #1e43a8;
+      --yellow: #ffd84d;
+      --coral: #ff8066;
+      --mint: #a9d9bd;
+      --line: 2px solid var(--ink);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "DM Sans", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      overflow-x: hidden;
+    }
+    button, input { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    a { color: inherit; text-decoration: none; }
+
+    .noise {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      pointer-events: none;
+      opacity: .035;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
+    }
+
+    .shell { width: min(1180px, calc(100% - 48px)); margin: 0 auto; }
+
+    nav {
+      height: 84px;
+      border-bottom: var(--line);
+      background: rgba(247, 243, 234, .94);
+      backdrop-filter: blur(12px);
+      position: relative;
+      z-index: 20;
+    }
+    .nav-inner { height: 100%; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 10px; font-family: "Space Grotesk", sans-serif; font-size: 25px; letter-spacing: -1.5px; }
+    .brand-mark {
+      width: 38px; height: 38px; border: var(--line); border-radius: 50%;
+      background: var(--yellow); display: grid; place-items: center;
+      transform: rotate(-5deg);
+      box-shadow: 3px 3px 0 var(--ink);
+    }
+    .brand-mark svg { width: 21px; }
+    .nav-links { display: flex; align-items: center; gap: 34px; font-weight: 700; font-size: 15px; }
+    .nav-links a:not(.nav-cta) { position: relative; }
+    .nav-links a:not(.nav-cta)::after {
+      content: ""; position: absolute; left: 0; right: 100%; bottom: -5px; height: 3px;
+      background: var(--coral); transition: right .25s ease;
+    }
+    .nav-links a:hover::after { right: 0; }
+    .nav-cta, .primary-btn {
+      border: var(--line); border-radius: 999px; background: var(--ink); color: white;
+      padding: 13px 20px; font-weight: 700; cursor: pointer;
+      box-shadow: 4px 4px 0 var(--coral); transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .nav-cta:hover, .primary-btn:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--coral); }
+    .profile-btn {
+      height: 42px; min-width: 42px; border: var(--line); border-radius: 999px;
+      background: var(--white); display: inline-flex; align-items: center; gap: 9px;
+      padding: 4px 12px 4px 5px; font-weight: 800; cursor: pointer;
+    }
+    .profile-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--yellow); border: 1.5px solid var(--ink); display: grid; place-items: center; }
+    .nav-actions { display: flex; align-items: center; gap: 8px; }
+    .language-btn {
+      height: 42px; min-width: 64px; border: var(--line); border-radius: 999px;
+      background: var(--white); font-weight: 800; cursor: pointer; padding: 0 10px;
+    }
+    .menu-btn { display: none; border: 0; background: transparent; font-size: 28px; cursor: pointer; }
+
+    .hero {
+      min-height: 620px;
+      border-bottom: var(--line);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-inner {
+      min-height: 620px;
+      display: grid;
+      grid-template-columns: 54% 46%;
+      align-items: center;
+    }
+    .hero-copy { position: relative; z-index: 3; padding: 70px 0 78px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 9px;
+      font-size: 13px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase;
+      margin-bottom: 22px;
+    }
+    .eyebrow::before { content: ""; width: 27px; height: 3px; background: var(--coral); }
+    h1 {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: clamp(62px, 7vw, 96px);
+      line-height: .91;
+      letter-spacing: -6px;
+      margin: 0 0 28px;
+      max-width: 760px;
+    }
+    .hero h1 span {
+      display: inline-block;
+      color: var(--blue);
+      position: relative;
+    }
+    .hero h1 span::after {
+      content: ""; position: absolute; left: 2%; right: -2%; bottom: -8px; height: 10px;
+      background: var(--yellow); border: 2px solid var(--ink); border-radius: 50%;
+      transform: rotate(-2deg); z-index: -1;
+    }
+    .hero-sub { max-width: 520px; font-size: 20px; line-height: 1.55; margin: 0 0 32px; }
+    .hero-actions { display: flex; align-items: center; gap: 14px; }
+    .primary-btn { display: inline-flex; align-items: center; gap: 12px; padding: 16px 22px; background: var(--blue); box-shadow: 5px 5px 0 var(--ink); }
+    .primary-btn:hover { box-shadow: 2px 2px 0 var(--ink); }
+    .primary-btn .arrow { font-size: 21px; transition: transform .2s ease; }
+    .primary-btn:hover .arrow { transform: translateX(4px); }
+    .text-btn {
+      border: 0; background: transparent; font-weight: 800; cursor: pointer;
+      padding: 14px 10px; border-bottom: 2px solid var(--ink);
+    }
+
+    .hero-art {
+      height: 100%; position: absolute; width: 46%; right: 0; top: 0;
+      background: var(--yellow);
+      border-left: var(--line);
+      overflow: hidden;
+    }
+    .hero-art::before {
+      content: ""; position: absolute; width: 540px; height: 540px;
+      border: 3px solid var(--ink); border-radius: 50%;
+      top: 38px; left: 50%; transform: translateX(-50%);
+      background: var(--white);
+    }
+    .orbit { position: absolute; width: 410px; height: 410px; border: 2px dashed rgba(23,23,23,.38); border-radius: 50%; left: calc(50% - 205px); top: 103px; animation: spin 35s linear infinite; }
+    .orbit-dot { position: absolute; width: 18px; height: 18px; border: 2px solid var(--ink); border-radius: 50%; background: var(--coral); }
+    .orbit-dot:nth-child(1) { left: 30px; top: 75px; }
+    .orbit-dot:nth-child(2) { right: 5px; top: 210px; background: var(--mint); }
+
+    .person {
+      position: absolute; z-index: 2; width: 310px; height: 430px;
+      left: 50%; bottom: -18px; transform: translateX(-50%);
+    }
+    .head { position: absolute; width: 112px; height: 126px; border: var(--line); border-radius: 48% 48% 45% 45%; background: #9a6648; left: 99px; top: 34px; z-index: 3; }
+    .hair { position: absolute; width: 124px; height: 70px; border: var(--line); border-radius: 60px 60px 24px 24px; background: var(--ink); left: 92px; top: 20px; z-index: 4; transform: rotate(-3deg); }
+    .hair::after { content: ""; position: absolute; width: 58px; height: 38px; border-bottom: 2px solid var(--ink); border-radius: 50%; right: -20px; top: 30px; background: var(--ink); transform: rotate(16deg); }
+    .face { position: absolute; z-index: 5; width: 70px; height: 44px; left: 120px; top: 88px; }
+    .eye { position: absolute; width: 7px; height: 7px; background: var(--ink); border-radius: 50%; top: 12px; animation: blink 4s infinite; }
+    .eye.left { left: 12px; } .eye.right { right: 12px; }
+    .smile { position: absolute; width: 26px; height: 13px; border-bottom: 3px solid var(--ink); border-radius: 50%; left: 22px; top: 23px; }
+    .body { position: absolute; width: 218px; height: 250px; border: var(--line); border-radius: 70px 70px 20px 20px; background: var(--blue); left: 46px; top: 145px; z-index: 2; overflow: hidden; }
+    .body::after { content: ""; position: absolute; width: 115px; height: 115px; border: 3px solid var(--ink); border-radius: 50%; background: var(--yellow); left: 51px; top: 48px; }
+    .body::before { content: "✓"; position: absolute; z-index: 2; font-size: 74px; font-weight: 700; left: 86px; top: 50px; }
+    .arm { position: absolute; width: 62px; height: 210px; border: var(--line); background: #9a6648; border-radius: 40px; z-index: 1; top: 180px; }
+    .arm.left { left: 24px; transform: rotate(25deg); } .arm.right { right: 24px; transform: rotate(-25deg); }
+
+    .sticker { position: absolute; z-index: 5; border: var(--line); box-shadow: 4px 4px 0 var(--ink); font-weight: 800; }
+    .sticker-task { left: 2%; top: 17%; background: var(--white); border-radius: 14px; padding: 13px 16px; transform: rotate(-7deg); animation: bob 4s ease-in-out infinite; }
+    .sticker-task small { display: block; color: #666; font-size: 11px; margin-bottom: 3px; }
+    .sticker-badge { right: 5%; bottom: 14%; width: 112px; height: 112px; border-radius: 50%; background: var(--coral); display: grid; place-items: center; text-align: center; line-height: 1.1; transform: rotate(8deg); animation: bob 5s ease-in-out infinite reverse; }
+
+    .ticker { height: 46px; border-bottom: var(--line); background: var(--coral); overflow: hidden; display: flex; align-items: center; }
+    .ticker-track { display: flex; width: max-content; animation: marquee 20s linear infinite; }
+    .ticker span { white-space: nowrap; font-family: "Space Grotesk", sans-serif; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; padding-right: 30px; }
+    .ticker i { margin-right: 30px; font-style: normal; }
+
+    .steps { padding: 104px 0 112px; background: var(--white); }
+    .section-heading { display: flex; justify-content: space-between; align-items: end; margin-bottom: 44px; }
+    .section-heading h2 { font-family: "Space Grotesk", sans-serif; font-size: clamp(42px, 5vw, 66px); line-height: .95; letter-spacing: -4px; margin: 8px 0 0; }
+    .section-heading p { max-width: 390px; line-height: 1.6; margin: 0 0 4px; color: #555; }
+    .kicker { color: var(--blue); font-weight: 800; font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; }
+
+    .step-grid { display: grid; grid-template-columns: repeat(3, 1fr); border: var(--line); border-radius: 22px; overflow: hidden; }
+    .step { min-height: 290px; padding: 34px; position: relative; border-right: var(--line); }
+    .step:last-child { border-right: 0; }
+    .step:nth-child(1) { background: #f5efe1; }
+    .step:nth-child(2) { background: var(--mint); }
+    .step:nth-child(3) { background: #dce5ff; }
+    .step-num { font-family: "Space Grotesk", sans-serif; font-size: 54px; color: rgba(23,23,23,.14); position: absolute; right: 24px; top: 14px; }
+    .step-icon { width: 64px; height: 64px; border: var(--line); border-radius: 16px; background: var(--white); display: grid; place-items: center; font-size: 30px; transform: rotate(-3deg); box-shadow: 4px 4px 0 var(--ink); margin-bottom: 30px; }
+    .step h3 { font-family: "Space Grotesk", sans-serif; font-size: 24px; margin: 0 0 10px; }
+    .step p { margin: 0; line-height: 1.55; color: #3f3f3f; }
+
+    .board { padding: 100px 0 110px; background: var(--paper); border-top: var(--line); }
+    .board-head { display: flex; align-items: end; justify-content: space-between; margin-bottom: 34px; }
+    .board-head h2 { font-family: "Space Grotesk", sans-serif; font-size: clamp(42px, 5vw, 64px); letter-spacing: -4px; line-height: 1; margin: 8px 0 0; }
+    .live { display: inline-flex; align-items: center; gap: 8px; margin-left: 12px; font-family: "DM Sans", sans-serif; font-size: 12px; letter-spacing: .5px; background: var(--coral); border: 2px solid var(--ink); border-radius: 999px; padding: 7px 10px; vertical-align: middle; }
+    .live::before { content: ""; width: 7px; height: 7px; background: #b93823; border-radius: 50%; animation: pulse 1.5s infinite; }
+    .filters { display: flex; gap: 8px; }
+    .filter {
+      border: 2px solid var(--ink); border-radius: 999px; background: var(--white);
+      padding: 9px 15px; font-weight: 800; cursor: pointer; transition: .18s ease;
+    }
+    .filter:hover { transform: translateY(-2px); }
+    .filter.active { background: var(--ink); color: white; }
+
+    .task-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .task-card {
+      background: var(--white); border: var(--line); border-radius: 18px; padding: 22px;
+      min-height: 224px; display: flex; flex-direction: column;
+      transition: transform .22s ease, box-shadow .22s ease;
+      cursor: pointer;
+    }
+    .task-card:hover { transform: translateY(-7px) rotate(-.5deg); box-shadow: 7px 7px 0 var(--ink); }
+    .task-top { display: flex; justify-content: space-between; align-items: start; }
+    .task-icon { width: 48px; height: 48px; border: 2px solid var(--ink); border-radius: 50%; display: grid; place-items: center; background: var(--yellow); font-size: 22px; }
+    .task-card:nth-child(2n) .task-icon { background: var(--mint); }
+    .task-card:nth-child(3n) .task-icon { background: #dce5ff; }
+    .price { font-family: "Space Grotesk", sans-serif; font-size: 28px; letter-spacing: -1px; }
+    .task-card h3 { font-family: "Space Grotesk", sans-serif; font-size: 21px; line-height: 1.15; letter-spacing: -.5px; margin: 22px 0 18px; }
+    .task-meta { margin-top: auto; display: flex; justify-content: space-between; align-items: end; font-size: 13px; color: #666; border-top: 1.5px solid #ddd8ce; padding-top: 14px; }
+    .task-meta strong { color: var(--ink); display: block; font-size: 14px; margin-top: 3px; }
+    .urgency { border: 1.5px solid var(--ink); border-radius: 999px; padding: 5px 8px; font-size: 11px; font-weight: 800; color: var(--ink); background: var(--coral); }
+
+    .cta { background: var(--blue); color: white; border-top: var(--line); border-bottom: var(--line); }
+    .cta-inner { min-height: 330px; display: flex; align-items: center; justify-content: space-between; position: relative; }
+    .cta h2 { font-family: "Space Grotesk", sans-serif; font-size: clamp(44px, 6vw, 78px); line-height: .94; letter-spacing: -5px; max-width: 740px; margin: 0; }
+    .cta h2 span { color: var(--yellow); }
+    .cta-art { width: 230px; height: 230px; border: 3px solid var(--ink); border-radius: 50%; background: var(--yellow); display: grid; place-items: center; font-size: 100px; transform: rotate(8deg); box-shadow: 10px 10px 0 var(--ink); }
+
+    footer { background: var(--ink); color: white; padding: 44px 0 24px; }
+    .footer-inner { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 30px; }
+    footer .brand { color: white; }
+    footer .brand-mark { color: var(--ink); }
+    .footer-blurb { color: #bbb; max-width: 350px; line-height: 1.6; margin: 18px 0 0; }
+    .footer-col h4 { margin: 6px 0 16px; color: var(--yellow); }
+    .footer-col a { display: block; color: #ddd; margin: 9px 0; }
+    .copyright { border-top: 1px solid #3a3a3a; margin-top: 38px; padding-top: 20px; color: #888; font-size: 13px; display: flex; justify-content: space-between; }
+
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 50; background: rgba(23,23,23,.55);
+      display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-backdrop.open { display: flex; animation: fadeIn .18s ease; }
+    .modal { width: min(480px, 100%); background: var(--white); border: var(--line); border-radius: 20px; box-shadow: 10px 10px 0 var(--ink); padding: 28px; }
+    .modal-head { display: flex; justify-content: space-between; align-items: start; }
+    .modal h3 { font-family: "Space Grotesk", sans-serif; font-size: 30px; margin: 8px 40px 8px 0; }
+    .modal-close { border: 2px solid var(--ink); border-radius: 50%; width: 36px; height: 36px; background: var(--yellow); cursor: pointer; font-size: 18px; }
+    .modal-info { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 22px 0; }
+    .modal-info div { border: 1.5px solid #d9d4c8; border-radius: 12px; padding: 12px; }
+    .modal-info small { display: block; color: #777; margin-bottom: 4px; }
+    .modal .primary-btn { width: 100%; justify-content: center; }
+
+    .form-modal { width: min(560px, 100%); max-height: calc(100vh - 40px); overflow-y: auto; }
+    .role-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 18px 0; }
+    .role-option {
+      position: relative; min-height: 118px; border: 2px solid var(--ink); border-radius: 16px;
+      background: var(--paper); padding: 16px; cursor: pointer; transition: .18s ease;
+    }
+    .role-option input { position: absolute; opacity: 0; }
+    .role-option:has(input:checked) { background: var(--yellow); box-shadow: 4px 4px 0 var(--ink); transform: translate(-2px, -2px); }
+    .role-option strong { display: block; font-family: "Space Grotesk", sans-serif; font-size: 18px; margin: 8px 0 4px; }
+    .role-option span { font-size: 28px; }
+    .role-option small { display: block; color: #555; line-height: 1.35; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field { margin-bottom: 12px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { display: block; font-size: 13px; font-weight: 800; margin-bottom: 7px; }
+    .field input, .field select, .field textarea {
+      width: 100%; border: 2px solid var(--ink); border-radius: 10px;
+      background: white; color: var(--ink); padding: 12px 13px; outline: none;
+    }
+    .field textarea { min-height: 96px; resize: vertical; }
+    .field input:focus, .field select:focus, .field textarea:focus { box-shadow: 3px 3px 0 var(--yellow); }
+    .profile-summary { display: flex; align-items: center; gap: 14px; border: 2px solid var(--ink); border-radius: 14px; background: var(--mint); padding: 14px; margin-bottom: 16px; }
+    .profile-summary .profile-avatar { width: 48px; height: 48px; font-size: 20px; flex: 0 0 auto; }
+    .profile-summary h4 { margin: 0 0 3px; font-family: "Space Grotesk", sans-serif; }
+    .profile-summary p { margin: 0; color: #444; font-size: 13px; }
+    .board-actions { display: flex; align-items: center; gap: 10px; }
+    .post-task-btn { border: var(--line); border-radius: 999px; background: var(--coral); padding: 10px 15px; font-weight: 800; cursor: pointer; box-shadow: 3px 3px 0 var(--ink); }
+    .post-task-btn:hover { transform: translate(1px, 1px); box-shadow: 2px 2px 0 var(--ink); }
+    .toast {
+      position: fixed; z-index: 80; right: 24px; bottom: 24px; max-width: 340px;
+      border: var(--line); border-radius: 12px; background: var(--yellow);
+      box-shadow: 5px 5px 0 var(--ink); padding: 14px 16px; font-weight: 800;
+      transform: translateY(120px); transition: transform .25s ease;
+    }
+    .toast.show { transform: translateY(0); }
+
+    @keyframes marquee { to { transform: translateX(-50%); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes blink { 0%, 48%, 52%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.08); } }
+    @keyframes bob { 0%,100% { transform: translateY(0) rotate(-7deg); } 50% { transform: translateY(-12px) rotate(-3deg); } }
+    @keyframes pulse { 50% { opacity: .35; } }
+    @keyframes fadeIn { from { opacity: 0; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+    }
+
+    @media (max-width: 900px) {
+      .shell { width: min(100% - 32px, 1180px); }
+      .nav-links { display: none; position: absolute; top: 83px; left: 0; right: 0; background: var(--paper); border-bottom: var(--line); padding: 20px 16px; flex-direction: column; align-items: stretch; gap: 4px; }
+      .nav-links.open { display: flex; }
+      .nav-links a { padding: 12px; }
+      .nav-links .nav-cta { text-align: center; }
+      .profile-btn span:last-child { display: none; }
+      .menu-btn { display: block; }
+      .hero, .hero-inner { min-height: 760px; }
+      .hero-inner { grid-template-columns: 1fr; align-items: start; }
+      .hero-copy { width: 58%; padding-top: 60px; }
+      h1 { font-size: clamp(58px, 11vw, 78px); }
+      .hero-art { width: 48%; height: 480px; top: auto; bottom: 0; }
+      .hero-art::before { width: 430px; height: 430px; top: 15px; }
+      .person { transform: translateX(-50%) scale(.82); transform-origin: bottom center; }
+      .orbit { transform: scale(.8); transform-origin: center; }
+      .sticker-task { top: 8%; }
+      .step-grid { grid-template-columns: 1fr; }
+      .step { border-right: 0; border-bottom: var(--line); min-height: 230px; }
+      .step:last-child { border-bottom: 0; }
+      .task-grid { grid-template-columns: repeat(2, 1fr); }
+      .cta-art { width: 180px; height: 180px; font-size: 78px; }
+    }
+
+    @media (max-width: 640px) {
+      nav { height: 72px; }
+      .nav-links { top: 71px; }
+      .shell { width: calc(100% - 28px); }
+      .hero, .hero-inner { min-height: 770px; }
+      .hero-copy { width: 100%; padding: 44px 0 320px; }
+      h1 { font-size: 54px; letter-spacing: -4px; }
+      .hero-sub { font-size: 17px; max-width: 430px; }
+      .hero-actions { align-items: stretch; }
+      .hero-art { width: 100%; height: 300px; border-left: 0; border-top: var(--line); }
+      .hero-art::before { width: 310px; height: 310px; top: 15px; }
+      .orbit { width: 280px; height: 280px; left: calc(50% - 140px); top: 25px; }
+      .person { bottom: -84px; transform: translateX(-50%) scale(.68); }
+      .sticker-task { left: 10px; top: 18px; }
+      .sticker-badge { right: 12px; bottom: 18px; width: 88px; height: 88px; font-size: 13px; }
+      .steps, .board { padding: 72px 0; }
+      .section-heading { display: block; }
+      .section-heading h2 { font-size: 46px; letter-spacing: -3px; }
+      .section-heading p { margin-top: 18px; }
+      .board-head { align-items: start; flex-direction: column; gap: 22px; }
+      .board-head h2 { font-size: 46px; letter-spacing: -3px; }
+      .filters { width: 100%; overflow-x: auto; padding-bottom: 4px; }
+      .filter { white-space: nowrap; }
+      .task-grid { grid-template-columns: 1fr; }
+      .board-actions { width: 100%; justify-content: space-between; }
+      .board-actions .filters { width: auto; }
+      .form-grid, .role-options { grid-template-columns: 1fr; }
+      .cta-inner { min-height: 390px; align-items: start; flex-direction: column; justify-content: center; }
+      .cta h2 { font-size: 51px; letter-spacing: -3.5px; margin-bottom: 28px; }
+      .cta-art { position: absolute; right: 0; bottom: 20px; width: 110px; height: 110px; font-size: 48px; box-shadow: 6px 6px 0 var(--ink); }
+      .footer-inner { grid-template-columns: 1fr 1fr; }
+      .footer-inner > div:first-child { grid-column: 1 / -1; }
+      .copyright { flex-direction: column; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+
+  <nav>
+    <div class="shell nav-inner">
+      <a class="brand" href="#" aria-label="Tasktap home">
+        <span class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8.5 11V5.5a1.5 1.5 0 0 1 3 0V10"/>
+            <path d="M11.5 10V4.5a1.5 1.5 0 0 1 3 0V11"/>
+            <path d="M14.5 10V6a1.5 1.5 0 0 1 3 0v6"/>
+            <path d="M8.5 11.5V9.5a1.5 1.5 0 0 0-3 0v4.3c0 5 3.2 7.7 7.5 7.7 4.1 0 7-2.7 7-6.5v-3.5a1.5 1.5 0 0 0-3 0"/>
+          </svg>
+        </span>
+        tasktap
+      </a>
+      <div class="nav-links" id="navLinks">
+        <a href="#how" data-i18n="how">Näin se toimii</a>
+        <a href="#board" data-i18n="board">Paikallinen ilmoitustaulu</a>
+        <a href="#safety" data-i18n="safety">Turvallisuus</a>
+        <button class="nav-cta" id="navPostBtn" type="button" data-i18n="postTask">Julkaise tehtävä</button>
+      </div>
+      <div class="nav-actions">
+        <button class="language-btn" id="languageBtn" type="button" aria-label="Switch language">FI / EN</button>
+        <button class="profile-btn" id="profileBtn" type="button" aria-label="Create or edit profile">
+          <span class="profile-avatar" id="navAvatar">＋</span>
+          <span id="navProfileLabel">Liity</span>
+        </button>
+      </div>
+      <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false">☰</button>
+    </div>
+  </nav>
+
+  <main>
+    <section class="hero">
+      <div class="shell hero-inner">
+        <div class="hero-copy">
+          <div class="eyebrow" data-i18n="eyebrow">Pääkaupunkiseudulle suunnattu</div>
+          <h1><span data-i18n="heroTitle">Hoidetaan.</span></h1>
+          <p class="hero-sub" data-i18n="heroSub">Naapuri tarvitsee apua? Nuori haluaa tienata? Tasktap yhdistää teidät lähelläsi.</p>
+          <div class="hero-actions">
+            <a class="primary-btn" href="#board"><span data-i18n="findTask">Etsi tehtävä</span> <span class="arrow">→</span></a>
+            <button class="text-btn" id="heroPostBtn" type="button" data-i18n="postInstead">Julkaise oma tehtävä</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-art" aria-hidden="true">
+        <div class="orbit"><span class="orbit-dot"></span><span class="orbit-dot"></span></div>
+        <div class="sticker sticker-task"><small data-i18n="justPosted">Juuri julkaistu</small><span data-i18n="lawnExample">Leikkaa nurmikko · 25 €</span></div>
+        <div class="person">
+          <div class="hair"></div>
+          <div class="head"></div>
+          <div class="face"><span class="eye left"></span><span class="eye right"></span><span class="smile"></span></div>
+          <div class="arm left"></div><div class="arm right"></div>
+          <div class="body"></div>
+        </div>
+        <div class="sticker sticker-badge"><span data-i18n="localFavorite">PAIKALLINEN<br>SUOSIKKI</span></div>
+      </div>
+    </section>
+
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker-track">
+        <span data-i18n="ticker">Koiranlenkit <i>✦</i> Nurmikonhoito <i>✦</i> Lehtien haravointi <i>✦</i> Kasvien kastelu <i>✦</i> Autotallin siivous <i>✦</i> Läksyt <i>✦</i></span>
+        <span data-i18n="ticker">Koiranlenkit <i>✦</i> Nurmikonhoito <i>✦</i> Lehtien haravointi <i>✦</i> Kasvien kastelu <i>✦</i> Autotallin siivous <i>✦</i> Läksyt <i>✦</i></span>
+      </div>
+    </div>
+
+    <section class="steps" id="how">
+      <div class="shell">
+        <div class="section-heading">
+          <div>
+            <div class="kicker" data-i18n="shortVersion">Lyhyt versio</div>
+            <h2 data-i18n="easyThree">Helppo kolmessa.</h2>
+          </div>
+          <p data-i18n="sectionSub">”En ehdi tänään” muuttuu nopeasti ”hoidettu”-tilaksi. Ei puhelinsoittoja, ei sekavia ryhmäviestejä.</p>
+        </div>
+        <div class="step-grid">
+          <article class="step">
+            <span class="step-num">01</span>
+            <div class="step-icon">✎</div>
+            <h3 data-i18n="step1Title">Kerro, mitä pitäisi tehdä</h3>
+            <p data-i18n="step1Text">Lisää tehtävä, ajankohta ja reilu palkka. Mitä tarkempi kuvaus, sen parempi.</p>
+          </article>
+          <article class="step">
+            <span class="step-num">02</span>
+            <div class="step-icon">👋</div>
+            <h3 data-i18n="step2Title">Tapa naapuri</h3>
+            <p data-i18n="step2Text">Valitse vahvistettu paikallinen auttaja, keskustelkaa turvallisesti ja sopikaa järjestelyistä.</p>
+          </article>
+          <article class="step">
+            <span class="step-num">03</span>
+            <div class="step-icon">✓</div>
+            <h3 data-i18n="step3Title">Ylävitonen. Valmis.</h3>
+            <p data-i18n="step3Text">Maksa turvallisesti, jätä arvio ja nauti yhdestä vähemmästä tekemättä jääneestä asiasta.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="board" id="board">
+      <div class="shell">
+        <div class="board-head">
+          <div>
+            <div class="kicker" data-i18n="aroundBlock">Lähipiirissä</div>
+            <h2><span data-i18n="openTasks">Avoimet tehtävät</span> <span class="live">LIVE</span></h2>
+          </div>
+          <div class="board-actions">
+            <div class="filters" aria-label="Filter tasks">
+              <button class="filter active" data-filter="All" data-i18n="filterAll">Kaikki</button>
+              <button class="filter" data-filter="Yard" data-i18n="filterYard">Piha</button>
+              <button class="filter" data-filter="Pets" data-i18n="filterPets">Lemmikit</button>
+              <button class="filter" data-filter="Cleaning" data-i18n="filterCleaning">Siivous</button>
+            </div>
+            <button class="post-task-btn" id="boardPostBtn" type="button" data-i18n="boardPost">+ Julkaise tehtävä</button>
+          </div>
+        </div>
+        <div class="task-grid" id="taskGrid"></div>
+      </div>
+    </section>
+
+    <section class="cta" id="safety">
+      <div class="shell cta-inner">
+        <h2><span data-i18n="ctaLine">Pienet tehtävät.</span><br><span data-i18n="ctaLine2">Isot naapuritunnelmat.</span></h2>
+        <a class="cta-art" href="#board" aria-label="View open tasks">→</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell">
+      <div class="footer-inner">
+        <div>
+          <a class="brand" href="#"><span class="brand-mark">✓</span> tasktap</a>
+          <p class="footer-blurb" data-i18n="footerText">Paikallinen auttamisen talous naapureille, jotka haluavat auttaa ja tarvitsevat apua.</p>
+        </div>
+        <div class="footer-col">
+          <h4 data-i18n="explore">Tutustu</h4>
+          <a href="#how" data-i18n="how">Näin se toimii</a>
+          <a href="#board" data-i18n="findTask">Etsi tehtävä</a>
+          <a href="#board" data-i18n="postTask">Julkaise tehtävä</a>
+        </div>
+        <div class="footer-col">
+          <h4 data-i18n="company">Yritys</h4>
+          <a href="#" data-i18n="safety">Turvallisuus</a>
+          <a href="#" data-i18n="community">Yhteisö</a>
+          <a href="#" data-i18n="about">Tietoa meistä</a>
+        </div>
+      </div>
+      <div class="copyright"><span>© 2026 Tasktap</span><span>Good neighbors. Good work.</span></div>
+    </div>
+  </footer>
+
+  <div class="modal-backdrop" id="profileBackdrop" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+    <div class="modal form-modal">
+      <div class="modal-head">
+        <h3 id="profileTitle" data-i18n="createProfile">Luo profiili</h3>
+        <button class="modal-close" id="profileClose" type="button" aria-label="Close">×</button>
+      </div>
+      <div id="profileSummary"></div>
+      <form id="profileForm">
+        <div class="role-options" aria-label="Choose profile type">
+          <label class="role-option">
+            <input type="radio" name="role" value="Worker" checked>
+            <span>🛠️</span>
+            <strong data-i18n="workerTitle">Haluan tehdä töitä</strong>
+            <small data-i18n="workerText">Löydä lähellä olevia tehtäviä ja tienaa.</small>
+          </label>
+          <label class="role-option">
+            <input type="radio" name="role" value="Task giver">
+            <span>🏡</span>
+            <strong data-i18n="giverTitle">Tarvitsen apua</strong>
+            <small data-i18n="giverText">Julkaise tehtäviä paikallisille auttajille.</small>
+          </label>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="profileName" data-i18n="nameLabel">Nimi</label>
+            <input id="profileName" name="name" required placeholder="Alex Morgan">
+          </div>
+          <div class="field">
+            <label for="profileNeighborhood" data-i18n="locationLabel">Paikkakunta tai kaupunginosa</label>
+            <input id="profileNeighborhood" name="neighborhood" required placeholder="Helsinki, Kallio">
+          </div>
+          <div class="field full">
+            <label for="profileBio" data-i18n="bioLabel">Pieni esittely</label>
+            <textarea id="profileBio" name="bio" placeholder="Mitä asioita viihdyt tekemään, milloin olet käytettävissä..."></textarea>
+          </div>
+        </div>
+        <button class="primary-btn" type="submit"><span data-i18n="createDemo">Luo demoprofiili</span> <span class="arrow">→</span></button>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="postBackdrop" role="dialog" aria-modal="true" aria-labelledby="postTitle">
+    <div class="modal form-modal">
+      <div class="modal-head">
+        <h3 id="postTitle" data-i18n="postTask">Julkaise tehtävä</h3>
+        <button class="modal-close" id="postClose" type="button" aria-label="Close">×</button>
+      </div>
+      <form id="postForm">
+        <div class="form-grid">
+          <div class="field full">
+            <label for="taskTitle" data-i18n="taskTitleLabel">Mitä pitää tehdä?</label>
+            <input id="taskTitle" name="title" required maxlength="60" placeholder="Esimerkki: Haravaa etupiha">
+          </div>
+          <div class="field">
+            <label for="taskCategory" data-i18n="categoryLabel">Kategori​a</label>
+            <select id="taskCategory" name="category">
+              <option value="Yard" data-i18n-option="filterYard">Piha</option>
+              <option value="Pets" data-i18n-option="filterPets">Lemmikit</option>
+              <option value="Cleaning" data-i18n-option="filterCleaning">Siivous</option>
+              <option value="Other" data-i18n-option="other">Muu</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="taskPrice" data-i18n="payLabel">Palkka</label>
+            <input id="taskPrice" name="price" type="number" required min="5" max="500" placeholder="25">
+          </div>
+          <div class="field">
+            <label for="taskTime" data-i18n="timeLabel">Milloin</label>
+            <input id="taskTime" name="time" required placeholder="lauantaina · klo 10">
+          </div>
+          <div class="field">
+            <label for="taskDistance" data-i18n="placeLabel">Sijainti</label>
+            <input id="taskDistance" name="place" required placeholder="Espoo, Tapiola">
+          </div>
+          <div class="field full">
+            <label for="taskDetails" data-i18n="detailsLabel">Lisätiedot</label>
+            <textarea id="taskDetails" name="details" placeholder="Lisää esimerkiksi työkalut, kulku ja työn laajuus."></textarea>
+          </div>
+        </div>
+        <button class="primary-btn" type="submit"><span data-i18n="publish">Julkaise ilmoitustaululle</span> <span class="arrow">→</span></button>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="modalTitle">Task details</h3>
+        <button class="modal-close" id="modalClose" aria-label="Close">×</button>
+      </div>
+      <div id="modalDetails"></div>
+      <button class="primary-btn" id="acceptBtn">I’m interested <span class="arrow">→</span></button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    const defaultTasks = [
+      { titleFi: "Koiranlenkitys — kultainennoutaja", titleEn: "Dog walking — Golden Retriever", category: "Pets", price: 15, timeFi: "Tänään · klo 16", timeEn: "Today · 4:00 PM", placeFi: "Helsinki, Kallio", placeEn: "Helsinki, Kallio", icon: "🐕", author: "Sarah M.", urgency: "Today" },
+      { titleFi: "Haravointi edessä ja takana", titleEn: "Rake the front & back yard", category: "Yard", price: 35, timeFi: "Huomenna · aamulla", timeEn: "Tomorrow · Morning", placeFi: "Espoo, Tapiola", placeEn: "Espoo, Tapiola", icon: "🍂", author: "Jukka T.", urgency: "Soon" },
+      { titleFi: "Maastoauton pesu piha-alueella", titleEn: "Wash an SUV in the driveway", category: "Cleaning", price: 25, timeFi: "Lauantaina · klo 10", timeEn: "Saturday · 10 AM", placeFi: "Vantaa, Tikkurila", placeEn: "Vantaa, Tikkurila", icon: "🚗", author: "Elena R.", urgency: "Flexible" },
+      { titleFi: "Laatikoiden siirto autotallista", titleEn: "Move boxes from the garage", category: "Cleaning", price: 40, timeFi: "Perjantaina · klo 17", timeEn: "Friday · 5 PM", placeFi: "Helsinki, Töölö", placeEn: "Helsinki, Töölö", icon: "📦", author: "Mikko B.", urgency: "Soon" },
+      { titleFi: "Kasvien kastelu viikon ajaksi", titleEn: "Water plants for the week", category: "Yard", price: 20, timeFi: "Ma–pe · aamulla", timeEn: "Mon–Fri · Morning", placeFi: "Kauniainen", placeEn: "Kauniainen", icon: "🌱", author: "Linda K.", urgency: "Flexible" },
+      { titleFi: "Kissojen ruoka ja kissanhiekan vaihto", titleEn: "Feed cats & clean litter", category: "Pets", price: 25, timeFi: "Pe–su", timeEn: "Fri–Sun", placeFi: "Espoo, Matinkylä", placeEn: "Espoo, Matinkylä", icon: "🐈", author: "David W.", urgency: "Today" }
+    ];
+
+    let savedTasks = [];
+    try { savedTasks = JSON.parse(localStorage.getItem("tasktapTasks")) || []; } catch (error) { savedTasks = []; }
+    let tasks = [...savedTasks, ...defaultTasks];
+
+    const escapeHTML = value => String(value).replace(/[&<>"']/g, char => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+    })[char]);
+
+    let currentLanguage = localStorage.getItem("tasktapLanguage") || "fi";
+    const translations = {
+      fi: {
+        how:"Näin se toimii", board:"Paikallinen ilmoitustaulu", safety:"Turvallisuus", postTask:"Julkaise tehtävä",
+        eyebrow:"Pääkaupunkiseudulle suunnattu", heroTitle:"Hoidetaan.", heroSub:"Naapuri tarvitsee apua? Nuori haluaa tienata? Tasktap yhdistää teidät lähelläsi.",
+        findTask:"Etsi tehtävä", postInstead:"Julkaise oma tehtävä", justPosted:"Juuri julkaistu", lawnExample:"Leikkaa nurmikko · 25 €",
+        localFavorite:"PAIKALLINEN<br>SUOSIKKI", shortVersion:"Lyhyt versio", easyThree:"Helppo kolmessa.",
+        step1Title:"Kerro, mitä pitäisi tehdä", step1Text:"Lisää tehtävä, ajankohta ja reilu palkka. Mitä tarkempi kuvaus, sen parempi.",
+        step2Title:"Tapa naapuri", step2Text:"Valitse vahvistettu paikallinen auttaja, keskustelkaa turvallisesti ja sopikaa järjestelyistä.",
+        step3Title:"Ylävitonen. Valmis.", step3Text:"Maksa turvallisesti, jätä arvio ja nauti yhdestä vähemmästä tekemättä jääneestä asiasta.",
+        aroundBlock:"Lähipiirissä", openTasks:"Avoimet tehtävät", filterAll:"Kaikki", filterYard:"Piha", filterPets:"Lemmikit", filterCleaning:"Siivous",
+        boardPost:"+ Julkaise tehtävä", ctaLine:"Pienet tehtävät.", ctaLine2:"Isot naapuritunnelmat.",
+        createProfile:"Luo profiili", workerTitle:"Haluan tehdä töitä", workerText:"Löydä lähellä olevia tehtäviä ja tienaa.",
+        giverTitle:"Tarvitsen apua", giverText:"Julkaise tehtäviä paikallisille auttajille.", nameLabel:"Nimi", locationLabel:"Paikkakunta tai kaupunginosa",
+        bioLabel:"Pieni esittely", createDemo:"Luo demoprofiili", postTitle:"Julkaise tehtävä", taskTitleLabel:"Mitä pitää tehdä?",
+        categoryLabel:"Kategoria", payLabel:"Palkka", timeLabel:"Milloin", placeLabel:"Sijainti", detailsLabel:"Lisätiedot",
+        publish:"Julkaise ilmoitustaululle", other:"Muu", join:"Liity", profileCreated:"Profiili luotu — tervetuloa",
+        taskLive:"Tehtäväsi on nyt ilmoitustaululla!", needProfile:"Luo ensin profiili — se vie vain hetken.", postedBy:"Julkaissut", distance:"Sijainti", when:"Milloin", price:"Palkka",
+        interested:"Olen kiinnostunut", requestSent:"Pyyntö lähetetty ✓", today:"Tänään", soon:"Pian", flexible:"Joustava", new:"Uusi", demoProfile:"Demoprofiili",
+        footerText:"Paikallinen auttamisen talous naapureille, jotka haluavat auttaa ja tarvitsevat apua.", explore:"Tutustu",
+        sectionSub:"”En ehdi tänään” muuttuu nopeasti ”hoidettu”-tilaksi. Ei puhelinsoittoja, ei sekavia ryhmäviestejä.",
+        ticker:"Koiranlenkit ✦ Nurmikonhoito ✦ Lehtien haravointi ✦ Kasvien kastelu ✦ Autotallin siivous ✦ Läksyt",
+        company:"Yritys", community:"Yhteisö", about:"Tietoa meistä"
+      },
+      en: {
+        how:"How it works", board:"Local board", safety:"Safety", postTask:"Post a task",
+        eyebrow:"Made for the Helsinki capital region", heroTitle:"Get things done.", heroSub:"A neighbor needs a hand? A teen wants to earn? Tasktap brings you together nearby.",
+        findTask:"Find a task", postInstead:"Post your own task", justPosted:"Just posted", lawnExample:"Mow the lawn · €25",
+        localFavorite:"LOCAL<br>FAVORITE", shortVersion:"The short version", easyThree:"Easy in three.",
+        step1Title:"Say what needs doing", step1Text:"Add the task, a date and a fair payment. More detail makes for a better match.",
+        step2Title:"Meet your neighbor", step2Text:"Pick a verified local helper, chat safely and agree on the plan.",
+        step3Title:"High-five. It’s done.", step3Text:"Pay securely, leave a review and enjoy one less thing on the list.",
+        aroundBlock:"Around the block", openTasks:"Open tasks", filterAll:"All", filterYard:"Yard", filterPets:"Pets", filterCleaning:"Cleaning",
+        boardPost:"+ Post task", ctaLine:"Small tasks.", ctaLine2:"Big neighborhood energy.",
+        createProfile:"Create your profile", workerTitle:"I want to work", workerText:"Find nearby tasks and earn.",
+        giverTitle:"I need a hand", giverText:"Post tasks for local helpers.", nameLabel:"Name", locationLabel:"Municipality or neighborhood",
+        bioLabel:"A little about you", createDemo:"Create demo profile", postTitle:"Post a task", taskTitleLabel:"What needs doing?",
+        categoryLabel:"Category", payLabel:"Pay", timeLabel:"When", placeLabel:"Location", detailsLabel:"Details",
+        publish:"Publish to the board", other:"Other", join:"Join", profileCreated:"Profile created — welcome",
+        taskLive:"Your task is live on the neighborhood board!", needProfile:"Create a profile first — it takes ten seconds.", postedBy:"Posted by", distance:"Location", when:"When", price:"Pay",
+        interested:"I’m interested", requestSent:"Request sent ✓", today:"Today", soon:"Soon", flexible:"Flexible", new:"New", demoProfile:"Demo profile",
+        footerText:"A local helping economy for neighbors who want to lend a hand and neighbors who need one.", explore:"Explore",
+        sectionSub:"Turn “ugh, not today” into “all handled” in a few taps. No phone tag, no awkward group texts.",
+        ticker:"Dog walks ✦ Lawn care ✦ Raking leaves ✦ Plant watering ✦ Garage cleanouts ✦ Homework help",
+        company:"Company", community:"Community", about:"About us"
+      }
+    };
+
+    function taskTitle(task) { return task.title || (currentLanguage === "fi" ? task.titleFi : task.titleEn); }
+    function taskTime(task) { return task.time || (currentLanguage === "fi" ? task.timeFi : task.timeEn); }
+    function taskPlace(task) { return task.place || (currentLanguage === "fi" ? task.placeFi : task.placeEn); }
+    function urgencyText(value) {
+      const map = { Today:"today", Soon:"soon", Flexible:"flexible", New:"new", Tänään:"today", Pian:"soon", Joustava:"flexible", Uusi:"new" };
+      return translations[currentLanguage][map[value] || "flexible"];
+    }
+
+    function applyLanguage() {
+      const t = translations[currentLanguage];
+      document.documentElement.lang = currentLanguage;
+      document.title = currentLanguage === "fi" ? "Tasktap — Hyvää naapurien kesken" : "Tasktap — Good neighbors, done good";
+      document.querySelectorAll("[data-i18n]").forEach(element => {
+        const key = element.dataset.i18n;
+        if (t[key]) {
+          if (key === "localFavorite") element.innerHTML = t[key];
+          else element.textContent = t[key];
+        }
+      });
+      document.querySelectorAll("[data-i18n-option]").forEach(element => {
+        const key = element.dataset.i18nOption;
+        if (t[key]) element.textContent = t[key];
+      });
+      document.querySelector("#languageBtn").textContent = currentLanguage === "fi" ? "FI / EN" : "EN / FI";
+      document.querySelector("#navAvatar").textContent = document.querySelector("#navProfileLabel").textContent === "＋" ? "＋" : document.querySelector("#navAvatar").textContent;
+      renderTasks(document.querySelector(".filter.active")?.dataset.filter || "All");
+      updateProfileUI();
+      acceptBtn.textContent = t.interested;
+      localStorage.setItem("tasktapLanguage", currentLanguage);
+    }
+
+    const grid = document.getElementById("taskGrid");
+    function renderTasks(category = "All") {
+      const visible = category === "All" ? tasks : tasks.filter(task => task.category === category);
+      grid.innerHTML = visible.map((task, index) => `
+        <article class="task-card" style="animation: fadeIn .35s ease ${index * 60}ms both" tabindex="0" data-task="${escapeHTML(taskTitle(task))}">
+          <div class="task-top">
+            <div class="task-icon">${task.icon}</div>
+            <div class="price">${escapeHTML(task.price)} €</div>
+          </div>
+          <h3>${escapeHTML(taskTitle(task))}</h3>
+          <div class="task-meta">
+            <div><strong>${escapeHTML(taskTime(task))}</strong>${escapeHTML(taskPlace(task))}</div>
+            <span class="urgency">${escapeHTML(urgencyText(task.urgency))}</span>
+          </div>
+        </article>
+      `).join("");
+    }
+    renderTasks();
+
+    document.querySelectorAll(".filter").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".filter").forEach(item => item.classList.remove("active"));
+        button.classList.add("active");
+        renderTasks(button.dataset.filter);
+      });
+    });
+
+    const backdrop = document.getElementById("modalBackdrop");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalDetails = document.getElementById("modalDetails");
+    grid.addEventListener("click", event => {
+      const card = event.target.closest(".task-card");
+      if (!card) return;
+      const task = tasks.find(item => taskTitle(item) === card.dataset.task);
+      modalTitle.textContent = taskTitle(task);
+      const t = translations[currentLanguage];
+      modalDetails.innerHTML = `
+        <div class="modal-info">
+          <div><small>${t.postedBy}</small><strong>${escapeHTML(task.author)}</strong></div>
+          <div><small>${t.distance}</small><strong>${escapeHTML(taskPlace(task))}</strong></div>
+          <div><small>${t.when}</small><strong>${escapeHTML(taskTime(task))}</strong></div>
+          <div><small>${t.price}</small><strong>${task.price} €</strong></div>
+        </div>
+        ${task.details ? `<p>${escapeHTML(task.details)}</p>` : ""}
+      `;
+      backdrop.classList.add("open");
+    });
+
+    function closeModal() { backdrop.classList.remove("open"); }
+    document.getElementById("modalClose").addEventListener("click", closeModal);
+    backdrop.addEventListener("click", event => { if (event.target === backdrop) closeModal(); });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        closeModal();
+        closeProfile();
+        closePost();
+      }
+    });
+
+    const acceptBtn = document.getElementById("acceptBtn");
+    acceptBtn.addEventListener("click", () => {
+      acceptBtn.textContent = translations[currentLanguage].requestSent;
+      acceptBtn.style.background = "#171717";
+      setTimeout(() => {
+        acceptBtn.textContent = translations[currentLanguage].interested;
+        acceptBtn.style.background = "";
+        closeModal();
+      }, 900);
+    });
+
+    grid.addEventListener("keydown", event => {
+      if ((event.key === "Enter" || event.key === " ") && event.target.closest(".task-card")) {
+        event.preventDefault();
+        event.target.closest(".task-card").click();
+      }
+    });
+
+    const profileBackdrop = document.getElementById("profileBackdrop");
+    const postBackdrop = document.getElementById("postBackdrop");
+    const profileBtn = document.getElementById("profileBtn");
+    const profileForm = document.getElementById("profileForm");
+    const postForm = document.getElementById("postForm");
+    const toast = document.getElementById("toast");
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2800);
+    }
+
+    function closeProfile() { profileBackdrop.classList.remove("open"); }
+    function closePost() { postBackdrop.classList.remove("open"); }
+    function openProfile() { profileBackdrop.classList.add("open"); }
+    function openPost() {
+      const profile = getProfile();
+      if (!profile) {
+        openProfile();
+        showToast(translations[currentLanguage].needProfile);
+        return;
+      }
+      postBackdrop.classList.add("open");
+    }
+
+    function getProfile() {
+      try { return JSON.parse(localStorage.getItem("tasktapProfile")); } catch (error) { return null; }
+    }
+
+    function updateProfileUI() {
+      const profile = getProfile();
+      const navAvatar = document.getElementById("navAvatar");
+      const navProfileLabel = document.getElementById("navProfileLabel");
+      const summary = document.getElementById("profileSummary");
+      if (!profile) {
+        navAvatar.textContent = "＋";
+        navProfileLabel.textContent = translations[currentLanguage].join;
+        summary.innerHTML = "";
+        return;
+      }
+      navAvatar.textContent = escapeHTML(profile.name.charAt(0).toUpperCase());
+      navProfileLabel.textContent = escapeHTML(profile.name.split(" ")[0]);
+      const roleLabel = profile.role === "Worker"
+        ? (currentLanguage === "fi" ? "Tekijä" : "Worker")
+        : (currentLanguage === "fi" ? "Tehtävänantaja" : "Task giver");
+      summary.innerHTML = `
+        <div class="profile-summary">
+          <div class="profile-avatar">${escapeHTML(profile.name.charAt(0).toUpperCase())}</div>
+          <div>
+            <h4>${escapeHTML(profile.name)} · ${roleLabel}</h4>
+            <p>${escapeHTML(profile.neighborhood)} · ${translations[currentLanguage].demoProfile}</p>
+          </div>
+        </div>
+      `;
+      document.getElementById("profileName").value = profile.name;
+      document.getElementById("profileNeighborhood").value = profile.neighborhood;
+      document.getElementById("profileBio").value = profile.bio || "";
+      const roleInput = profileForm.querySelector(`input[name="role"][value="${profile.role === "Worker" ? "Worker" : "Task giver"}"]`);
+      if (roleInput) roleInput.checked = true;
+      document.getElementById("profileTitle").textContent = currentLanguage === "fi" ? "Demoprofiilisi" : "Your demo profile";
+    }
+    updateProfileUI();
+
+    profileBtn.addEventListener("click", openProfile);
+    document.getElementById("profileClose").addEventListener("click", closeProfile);
+    profileBackdrop.addEventListener("click", event => { if (event.target === profileBackdrop) closeProfile(); });
+
+    profileForm.addEventListener("submit", event => {
+      event.preventDefault();
+      const formData = new FormData(profileForm);
+      const profile = {
+        name: formData.get("name").trim(),
+        neighborhood: formData.get("neighborhood").trim(),
+        bio: formData.get("bio").trim(),
+        role: formData.get("role")
+      };
+      if (!profile.name || !profile.neighborhood) return;
+      localStorage.setItem("tasktapProfile", JSON.stringify(profile));
+      updateProfileUI();
+      closeProfile();
+      showToast(`${translations[currentLanguage].profileCreated}, ${profile.name}!`);
+    });
+
+    ["heroPostBtn", "boardPostBtn", "navPostBtn"].forEach(id => {
+      document.getElementById(id).addEventListener("click", openPost);
+    });
+    document.getElementById("postClose").addEventListener("click", closePost);
+    postBackdrop.addEventListener("click", event => { if (event.target === postBackdrop) closePost(); });
+
+    postForm.addEventListener("submit", event => {
+      event.preventDefault();
+      const formData = new FormData(postForm);
+      const profile = getProfile();
+      const category = formData.get("category");
+      const iconMap = { Yard: "🌿", Pets: "🐾", Cleaning: "✨", Other: "🧰" };
+      const newTask = {
+        title: formData.get("title").trim(),
+        category,
+        price: Number(formData.get("price")),
+        time: formData.get("time").trim(),
+        place: formData.get("place").trim(),
+        details: formData.get("details").trim(),
+        icon: iconMap[category] || "🧰",
+        author: profile.name,
+        urgency: "New"
+      };
+      tasks.unshift(newTask);
+      savedTasks = [newTask, ...savedTasks];
+      localStorage.setItem("tasktapTasks", JSON.stringify(savedTasks));
+      document.querySelectorAll(".filter").forEach(item => item.classList.remove("active"));
+      document.querySelector('.filter[data-filter="All"]').classList.add("active");
+      renderTasks();
+      postForm.reset();
+      closePost();
+      document.getElementById("board").scrollIntoView({ behavior: "smooth" });
+      showToast(translations[currentLanguage].taskLive);
+    });
+
+    document.getElementById("languageBtn").addEventListener("click", () => {
+      currentLanguage = currentLanguage === "fi" ? "en" : "fi";
+      applyLanguage();
+    });
+
+    applyLanguage();
+
+    const menuBtn = document.getElementById("menuBtn");
+    const navLinks = document.getElementById("navLinks");
+    menuBtn.addEventListener("click", () => {
+      const open = navLinks.classList.toggle("open");
+      menuBtn.setAttribute("aria-expanded", open);
+      menuBtn.textContent = open ? "×" : "☰";
+    });
+    navLinks.addEventListener("click", () => {
+      navLinks.classList.remove("open");
+      menuBtn.setAttribute("aria-expanded", "false");
+      menuBtn.textContent = "☰";
+    });
+  </script>
+</body>
+</html>
